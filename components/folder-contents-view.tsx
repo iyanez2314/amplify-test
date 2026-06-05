@@ -93,16 +93,16 @@ export function FolderContentsView({
 
   return (
     <div className="relative pb-20">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-4 md:mb-6">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center">
-            <Film className="w-5 h-5 text-foreground" />
+          <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-secondary flex items-center justify-center flex-shrink-0">
+            <Film className="w-4 h-4 md:w-5 md:h-5 text-foreground" />
           </div>
           <div>
-            <h2 className="text-lg font-heading font-semibold text-foreground tracking-tight">
+            <h2 className="text-base md:text-lg font-heading font-semibold text-foreground tracking-tight">
               {folder.name}
             </h2>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs md:text-sm text-muted-foreground">
               {videos.length} {videos.length === 1 ? "video" : "videos"}
               {selectedIds.size > 0 && ` · ${selectedIds.size} selected`}
             </p>
@@ -115,12 +115,13 @@ export function FolderContentsView({
             size="sm"
             onClick={handleSelectAll}
             className={cn(
-              "gap-2",
+              "gap-2 text-xs md:text-sm",
               selectedIds.size === videos.length && "bg-primary/10 border-primary/30"
             )}
           >
             <CheckSquare className="w-4 h-4" />
-            {selectedIds.size === videos.length ? "Deselect All" : "Select All"}
+            <span className="hidden sm:inline">{selectedIds.size === videos.length ? "Deselect All" : "Select All"}</span>
+            <span className="sm:hidden">{selectedIds.size === videos.length ? "None" : "All"}</span>
           </Button>
 
           <div className="flex items-center gap-1 p-1 bg-secondary/50 rounded-lg">
@@ -151,7 +152,7 @@ export function FolderContentsView({
       </div>
 
       {viewMode === "grid" ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 overflow-visible">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-4 overflow-visible">
           {videos.map(video => (
             <VideoCard
               key={video.id}

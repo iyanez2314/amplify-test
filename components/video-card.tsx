@@ -125,13 +125,13 @@ export function VideoCard({
         </div>
       </div>
 
-      <div className="p-3">
-        <h4 className="font-medium text-foreground text-sm truncate mb-2">
+      <div className="p-2 md:p-3">
+        <h4 className="font-medium text-foreground text-xs md:text-sm truncate mb-1 md:mb-2">
           {video.name}
         </h4>
 
         {video.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 mb-2">
+          <div className="flex flex-wrap gap-1 mb-1 md:mb-2 hidden sm:flex">
             {video.tags.slice(0, 3).map(tagId => (
               <TagBadge key={tagId} tagId={tagId} size="sm" />
             ))}
@@ -143,7 +143,7 @@ export function VideoCard({
           </div>
         )}
 
-        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+        <div className="flex items-center gap-3 text-[10px] md:text-xs text-muted-foreground">
           <span className="flex items-center gap-1">
             <HardDrive className="w-3 h-3" />
             {formatFileSize(video.size)}

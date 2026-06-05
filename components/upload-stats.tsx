@@ -51,22 +51,22 @@ export function UploadStats({ files }: UploadStatsProps) {
   }
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-4">
       {stats.map((stat) => (
         <Card key={stat.label} className="bg-card/60 border-border/50 backdrop-blur-sm overflow-hidden">
-          <CardContent className="p-5">
-            <div className="flex items-center gap-4">
+          <CardContent className="p-3 md:p-5">
+            <div className="flex items-center gap-2 md:gap-4">
               <div className={`
-                relative w-12 h-12 rounded-xl bg-gradient-to-br ${stat.gradient} 
-                flex items-center justify-center
+                relative w-9 h-9 md:w-12 md:h-12 rounded-lg md:rounded-xl bg-gradient-to-br ${stat.gradient}
+                flex items-center justify-center flex-shrink-0
               `}>
-                <stat.icon className={`w-5 h-5 ${stat.iconColor} ${stat.animate ? 'animate-spin' : ''}`} />
+                <stat.icon className={`w-4 h-4 md:w-5 md:h-5 ${stat.iconColor} ${stat.animate ? 'animate-spin' : ''}`} />
               </div>
-              <div>
-                <p className="text-3xl font-heading font-bold tracking-tight text-foreground">
+              <div className="min-w-0">
+                <p className="text-xl md:text-3xl font-heading font-bold tracking-tight text-foreground">
                   {stat.value}
                 </p>
-                <p className="text-sm text-muted-foreground">{stat.label}</p>
+                <p className="text-xs md:text-sm text-muted-foreground truncate">{stat.label}</p>
               </div>
             </div>
           </CardContent>

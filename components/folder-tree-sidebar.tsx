@@ -60,7 +60,7 @@ export function FolderTreeSidebar({
 
   if (isCollapsed) {
     return (
-      <div className="w-12 flex-shrink-0 border-r border-border/50 bg-card/30 flex flex-col items-center py-4 gap-2">
+      <div className="hidden md:flex w-12 flex-shrink-0 border-r border-border/50 bg-card/30 flex-col items-center py-4 gap-2">
         <Button
           variant="ghost"
           size="icon-sm"
@@ -85,7 +85,7 @@ export function FolderTreeSidebar({
   }
 
   return (
-    <div className="w-64 flex-shrink-0 border-r border-border/50 bg-card/30 flex flex-col">
+    <div className="hidden md:flex w-64 flex-shrink-0 border-r border-border/50 bg-card/30 flex-col">
       <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
         <h3 className="text-sm font-semibold text-foreground">Folders</h3>
         <div className="flex items-center gap-1">

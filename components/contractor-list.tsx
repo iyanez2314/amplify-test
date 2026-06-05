@@ -192,31 +192,31 @@ function ContractorRow({
   }
 
   return (
-    <div className="bg-card/40 border border-border/50 rounded-xl p-5 hover:bg-card/60 transition-colors">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
-            <User className="w-6 h-6 text-muted-foreground" />
+    <div className="bg-card/40 border border-border/50 rounded-xl p-3 md:p-5 hover:bg-card/60 transition-colors">
+      <div className="flex items-start justify-between gap-2 md:gap-4">
+        <div className="flex items-start gap-3 md:gap-4 flex-1 min-w-0">
+          <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
+            <User className="w-5 h-5 md:w-6 md:h-6 text-muted-foreground" />
           </div>
 
-          <div className="space-y-2">
-            <div className="flex items-center gap-3">
-              <h3 className="font-semibold text-foreground">{contractor.name}</h3>
+          <div className="space-y-2 min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2 md:gap-3">
+              <h3 className="font-semibold text-sm md:text-base text-foreground truncate">{contractor.name}</h3>
               <Badge
                 variant="outline"
-                className={cn("text-xs", statusConfig.className)}
+                className={cn("text-xs flex-shrink-0", statusConfig.className)}
               >
                 {statusConfig.label}
               </Badge>
             </div>
 
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <span className="flex items-center gap-1.5">
-                <Mail className="w-3.5 h-3.5" />
-                {contractor.email}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-xs md:text-sm text-muted-foreground">
+              <span className="flex items-center gap-1.5 truncate">
+                <Mail className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0" />
+                <span className="truncate">{contractor.email}</span>
               </span>
               <span className="flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5" />
+                <Calendar className="w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0" />
                 Expires {formatDate(contractor.expiresAt)}
               </span>
             </div>
@@ -233,14 +233,14 @@ function ContractorRow({
             </div>
 
             <div className="flex items-center gap-2 pt-1">
-              <code className="text-xs bg-secondary/60 px-2 py-1 rounded font-mono text-muted-foreground">
+              <code className="text-xs bg-secondary/60 px-2 py-1 rounded font-mono text-muted-foreground truncate max-w-[150px] md:max-w-none">
                 {contractor.username}
               </code>
               <Button
                 variant="ghost"
                 size="icon-xs"
                 onClick={handleCopyCredentials}
-                className="text-muted-foreground hover:text-foreground"
+                className="text-muted-foreground hover:text-foreground flex-shrink-0"
               >
                 {copied ? (
                   <Check className="w-3 h-3 text-primary" />

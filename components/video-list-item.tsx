@@ -58,7 +58,7 @@ export function VideoListItem({
     <div
       onClick={handleClick}
       className={cn(
-        "group flex items-center gap-4 p-3 border rounded-xl transition-all cursor-pointer",
+        "group flex items-center gap-2 md:gap-4 p-2 md:p-3 border rounded-xl transition-all cursor-pointer",
         isSelected
           ? "bg-primary/5 border-primary"
           : "bg-card/40 border-border/50 hover:bg-card/60 hover:border-border"
@@ -77,7 +77,7 @@ export function VideoListItem({
         </div>
       )}
 
-      <div className="relative w-32 aspect-video bg-secondary/50 rounded-lg overflow-hidden flex-shrink-0">
+      <div className="relative w-20 md:w-32 aspect-video bg-secondary/50 rounded-lg overflow-hidden flex-shrink-0">
         <div className="absolute inset-0 flex items-center justify-center">
           <Film className="w-6 h-6 text-muted-foreground" />
         </div>
@@ -95,25 +95,25 @@ export function VideoListItem({
       </div>
 
       <div className="flex-1 min-w-0">
-        <h4 className="font-medium text-foreground truncate mb-1">
+        <h4 className="font-medium text-sm md:text-base text-foreground truncate mb-1">
           {video.name}
         </h4>
 
         {video.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 mb-1.5">
+          <div className="flex flex-wrap gap-1 mb-1.5 hidden sm:flex">
             {video.tags.map(tagId => (
               <TagBadge key={tagId} tagId={tagId} size="sm" />
             ))}
           </div>
         )}
 
-        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-          <span className="flex items-center gap-1.5">
-            <Clock className="w-3.5 h-3.5" />
+        <div className="flex items-center gap-2 md:gap-4 text-xs md:text-sm text-muted-foreground">
+          <span className="flex items-center gap-1">
+            <Clock className="w-3 h-3 md:w-3.5 md:h-3.5" />
             {formatDuration(video.duration)}
           </span>
-          <span className="flex items-center gap-1.5">
-            <HardDrive className="w-3.5 h-3.5" />
+          <span className="flex items-center gap-1 hidden sm:flex">
+            <HardDrive className="w-3 h-3 md:w-3.5 md:h-3.5" />
             {formatFileSize(video.size)}
           </span>
         </div>

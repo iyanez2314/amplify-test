@@ -54,10 +54,10 @@ export function VideoUploadZone({ onFilesSelected, disabled }: VideoUploadZonePr
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         className={`
-          relative border-2 border-dashed rounded-2xl p-16 text-center transition-all duration-300 cursor-pointer
+          relative border-2 border-dashed rounded-xl md:rounded-2xl p-8 md:p-16 text-center transition-all duration-300 cursor-pointer
           bg-gradient-to-b from-card/50 to-card
-          ${isDragOver 
-            ? "border-primary bg-primary/5 scale-[1.01]" 
+          ${isDragOver
+            ? "border-primary bg-primary/5 scale-[1.01]"
             : "border-border/70 hover:border-primary/40 hover:bg-card/80"
           }
           ${disabled ? "opacity-50 cursor-not-allowed" : ""}
@@ -71,37 +71,37 @@ export function VideoUploadZone({ onFilesSelected, disabled }: VideoUploadZonePr
           disabled={disabled}
           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
         />
-        
-        <div className="flex flex-col items-center gap-6">
+
+        <div className="flex flex-col items-center gap-4 md:gap-6">
           <div className="relative">
             {isDragOver && (
               <div className="absolute inset-0 bg-primary/40 blur-xl rounded-full animate-pulse" />
             )}
             <div className={`
-              relative w-20 h-20 rounded-2xl flex items-center justify-center transition-all duration-300
-              ${isDragOver 
-                ? "bg-gradient-to-br from-primary to-primary/70 shadow-xl shadow-primary/30" 
+              relative w-14 h-14 md:w-20 md:h-20 rounded-xl md:rounded-2xl flex items-center justify-center transition-all duration-300
+              ${isDragOver
+                ? "bg-gradient-to-br from-primary to-primary/70 shadow-xl shadow-primary/30"
                 : "bg-secondary/80"
               }
             `}>
               {isDragOver ? (
-                <Film className="w-9 h-9 text-primary-foreground" />
+                <Film className="w-7 h-7 md:w-9 md:h-9 text-primary-foreground" />
               ) : (
-                <CloudUpload className="w-9 h-9 text-muted-foreground" />
+                <CloudUpload className="w-7 h-7 md:w-9 md:h-9 text-muted-foreground" />
               )}
             </div>
           </div>
-          
-          <div className="space-y-2">
-            <p className="text-xl font-heading font-semibold text-foreground tracking-tight">
+
+          <div className="space-y-1 md:space-y-2">
+            <p className="text-base md:text-xl font-heading font-semibold text-foreground tracking-tight">
               {isDragOver ? "Drop your videos here" : "Drag and drop video files"}
             </p>
-            <p className="text-muted-foreground">
+            <p className="text-sm md:text-base text-muted-foreground">
               or <span className="text-primary font-medium hover:underline">browse</span> from your computer
             </p>
           </div>
-          
-          <div className="flex items-center gap-6 text-xs text-muted-foreground/80">
+
+          <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-6 text-xs text-muted-foreground/80">
             <span className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-primary/60" />
               MP4, MOV, AVI, WebM
