@@ -16,8 +16,9 @@ export const handler = async (event: any) => {
   const result = await client.send(
     new QueryCommand({
       TableName: process.env.UPLOAD_LINK_TABLE,
-      IndexName: "byToken",
-      KeyConditionExpression: "token = :token",
+      IndexName: "uploadLinksByToken",
+      KeyConditionExpression: "#token = :token",
+      ExpressionAttributeNames: { "#token": "token" },
       ExpressionAttributeValues: { ":token": token },
     }),
   );

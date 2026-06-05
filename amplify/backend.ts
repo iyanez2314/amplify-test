@@ -5,6 +5,7 @@ import { myFunction } from "./test-function/resource";
 import { generateUploadLink } from "./generate-upload-link/resource";
 import { Cors, LambdaIntegration, RestApi } from "aws-cdk-lib/aws-apigateway";
 import { Function as LambdaFunction } from "aws-cdk-lib/aws-lambda";
+import { PolicyStatement } from "aws-cdk-lib/aws-iam";
 import { validateToken } from "./validate-token/resource";
 
 const backend = defineBackend({
@@ -55,4 +56,13 @@ backend.data.resources.tables["UploadLink"].grantWriteData(
 
 backend.data.resources.tables["UploadLink"].grantReadData(
   backend.validateToken.resources.lambda,
+);
+
+(backend.validateToken.resources.lambda as LambdaFunction).addToRolePolicy(
+  new PolicyStatement({
+    actions: ["dynamodb:Query"],
+    resources: [
+      `${backend.data.resources.tables["UploadLink"].tableArn}/index/*`,
+    ],
+  }),
 );
