@@ -16,6 +16,7 @@ const schema = a.schema({
       uploadCount: a.integer().required(),
       status: a.enum(["active", "expired", "revoked"]),
     })
+    .secondaryIndexes((index) => [index("token")])
     .authorization((allow) => [allow.authenticated()]),
 });
 
