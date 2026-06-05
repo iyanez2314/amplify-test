@@ -3,6 +3,10 @@ import { auth } from "./auth/resource";
 import { data } from "./data/resource";
 import { myFunction } from "./test-function/resource";
 
+
+
 defineBackend({
+  auth,
+  data,
   myFunction,
 });
