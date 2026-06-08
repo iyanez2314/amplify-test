@@ -2,6 +2,7 @@ import { Analytics } from '@vercel/analytics/next'
 import type { Metadata } from 'next'
 import { Inter, Space_Grotesk } from 'next/font/google'
 import './globals.css'
+import AmplifyProvider from "@/components/amplify-provider"
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -44,7 +45,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${spaceGrotesk.variable} bg-background`}>
       <body className="font-sans antialiased bg-background">
-        {children}
+        <AmplifyProvider>{children}</AmplifyProvider>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>

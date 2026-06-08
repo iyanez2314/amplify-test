@@ -5,6 +5,17 @@ import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
 const client = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
 export const handler = async (event: any) => {
+  const groups: string[] =
+    event.requestContext?.authorizer?.claims?.["cognito:groups"]?.split(",") ??
+    [];
+
+  if (!groups.includes("Admins")) {
+    return {
+      statusCode: 403,
+      body: JSON.stringify({ error: "Admins only" }),
+    };
+  }
+
   if (!event.body) {
     return {
       statusCode: 400,

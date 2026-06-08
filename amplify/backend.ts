@@ -3,7 +3,7 @@ import { auth } from "./auth/resource";
 import { data } from "./data/resource";
 import { myFunction } from "./test-function/resource";
 import { generateUploadLink } from "./generate-upload-link/resource";
-import { Cors, LambdaIntegration, RestApi } from "aws-cdk-lib/aws-apigateway";
+import { Cors, CognitoUserPoolsAuthorizer, AuthorizationType, LambdaIntegration, RestApi } from "aws-cdk-lib/aws-apigateway";
 import { Function as LambdaFunction } from "aws-cdk-lib/aws-lambda";
 import { PolicyStatement } from "aws-cdk-lib/aws-iam";
 import { validateToken } from "./validate-token/resource";
@@ -34,8 +34,15 @@ const validateTokenIntegration = new LambdaIntegration(
   backend.validateToken.resources.lambda,
 );
 
+const authorizer = new CognitoUserPoolsAuthorizer(apiStack, "AdminAuthorizer", {
+  cognitoUserPools: [backend.auth.resources.userPool],
+});
+
 const linkResource = api.root.addResource("links");
-linkResource.addMethod("POST", generateLinkIntegration);
+linkResource.addMethod("POST", generateLinkIntegration, {
+  authorizer,
+  authorizationType: AuthorizationType.COGNITO,
+});
 
 const validateResource = api.root.addResource("validate");
 validateResource.addMethod("GET", validateTokenIntegration);
