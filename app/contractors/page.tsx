@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { ContractorList } from "@/components/contractor-list"
 import { CreateContractorDialog } from "@/components/create-contractor-dialog"
@@ -8,83 +8,115 @@ import { CredentialsDialog } from "@/components/credentials-dialog"
 import { Button } from "@/components/ui/button"
 import { UserPlus, Users, ArrowLeft } from "lucide-react"
 import Link from "next/link"
-import {
-  MOCK_CONTRACTORS,
-  type Contractor,
-  generateId,
-  generateUsername,
-  generatePassword
-} from "@/types/contractor"
-import { MOCK_FOLDERS } from "@/types/folder"
+import { useRouter } from "next/navigation"
+import { fetchAuthSession } from "aws-amplify/auth"
+import { generateClient } from "aws-amplify/data"
+import type { Schema } from "@/amplify/data/resource"
+import type { Contractor } from "@/types/contractor"
+import { useAuth } from "@/hooks/use-auth"
+
+const client = generateClient<Schema>()
 
 export default function ContractorsPage() {
-  const [contractors, setContractors] = useState<Contractor[]>(MOCK_CONTRACTORS)
+  const { isAdmin, isLoading, isAuthenticated, handleSignOut } = useAuth()
+  const router = useRouter()
+  const [contractors, setContractors] = useState<Contractor[]>([])
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
-  const [newCredentials, setNewCredentials] = useState<{
-    name: string
-    username: string
-    password: string
-  } | null>(null)
+  const [creating, setCreating] = useState(false)
+  const [newCredentials, setNewCredentials] = useState<{ name: string; link: string } | null>(null)
 
-  const handleCreateContractor = useCallback((data: {
-    name: string
-    email: string
-    folderIds: string[]
-    expiresAt: Date
-  }) => {
-    const username = generateUsername(data.name)
-    const password = generatePassword()
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) router.push("/login")
+  }, [isLoading, isAuthenticated, router])
 
-    const newContractor: Contractor = {
-      id: generateId(),
-      name: data.name,
-      email: data.email,
-      username,
-      password,
-      assignedFolderIds: data.folderIds,
-      createdAt: new Date(),
-      expiresAt: data.expiresAt,
-      status: "active"
+  useEffect(() => {
+    if (isAuthenticated) loadContractors()
+  }, [isAuthenticated])
+
+  const loadContractors = async () => {
+    try {
+      const { data } = await client.models.UploadLink.list()
+      const mapped: Contractor[] = (data ?? []).filter(Boolean).map((item) => ({
+        id: item.id,
+        contractorName: item.contractorName,
+        dropboxFolder: item.dropboxFolder,
+        token: item.token,
+        expiresAt: item.expiresAt,
+        maxUploads: item.maxUploads,
+        uploadCount: item.uploadCount,
+        status: (item.status ?? "active") as Contractor["status"],
+        uploadLink: `${process.env.NEXT_PUBLIC_APP_URL}/upload?token=${item.token}`,
+      }))
+      setContractors(mapped)
+    } catch (err) {
+      console.error("Failed to load contractors", err)
     }
+  }
 
-    setContractors(prev => [newContractor, ...prev])
-    setCreateDialogOpen(false)
-    setNewCredentials({
-      name: data.name,
-      username,
-      password
-    })
+  const handleCreateContractor = useCallback(async (data: {
+    contractorName: string
+    dropboxFolder: string
+    expiresInHours: number
+    maxUploads: number
+  }) => {
+    setCreating(true)
+    try {
+      const session = await fetchAuthSession()
+      const token = session.tokens?.idToken?.toString()
+
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/links`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token ?? "",
+        },
+        body: JSON.stringify(data),
+      })
+
+      const result = await res.json()
+      if (!res.ok) throw new Error(result.error)
+
+      setCreateDialogOpen(false)
+      setNewCredentials({ name: data.contractorName, link: result.link })
+      await loadContractors()
+    } catch (err: any) {
+      console.error("Failed to create contractor link", err)
+    } finally {
+      setCreating(false)
+    }
   }, [])
 
-  const handleRevokeAccess = useCallback((id: string) => {
-    setContractors(prev => prev.map(c =>
-      c.id === id ? { ...c, status: "revoked" as const } : c
-    ))
+  const handleRevokeAccess = useCallback(async (id: string) => {
+    try {
+      await client.models.UploadLink.update({ id, status: "revoked" })
+      setContractors(prev => prev.map(c => c.id === id ? { ...c, status: "revoked" } : c))
+    } catch (err) {
+      console.error("Failed to revoke access", err)
+    }
   }, [])
 
-  const handleExtendAccess = useCallback((id: string, newExpiry: Date) => {
-    setContractors(prev => prev.map(c =>
-      c.id === id ? { ...c, expiresAt: newExpiry, status: "active" as const } : c
-    ))
+  const handleDeleteContractor = useCallback(async (id: string) => {
+    try {
+      await client.models.UploadLink.delete({ id })
+      setContractors(prev => prev.filter(c => c.id !== id))
+    } catch (err) {
+      console.error("Failed to delete contractor", err)
+    }
   }, [])
 
-  const handleDeleteContractor = useCallback((id: string) => {
-    setContractors(prev => prev.filter(c => c.id !== id))
-  }, [])
+  if (isLoading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>
+  if (!isAuthenticated) return null
 
   const activeCount = contractors.filter(c => c.status === "active").length
   const expiredCount = contractors.filter(c => c.status === "expired").length
 
   return (
     <div className="min-h-screen bg-background">
-      <DashboardHeader />
+      <DashboardHeader onSignOut={handleSignOut} />
 
       <main className="max-w-6xl mx-auto px-4 md:px-8 py-6 md:py-10">
         <div className="mb-8">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
-          >
+          <Link href="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4">
             <ArrowLeft className="w-4 h-4" />
             Back to Dashboard
           </Link>
@@ -95,22 +127,20 @@ export default function ContractorsPage() {
                 <Users className="w-5 h-5 md:w-6 md:h-6 text-primary" />
               </div>
               <div>
-                <h1 className="text-xl md:text-2xl font-heading font-bold text-foreground">
-                  Contractor Access
-                </h1>
-                <p className="text-sm md:text-base text-muted-foreground">
-                  Manage temporary accounts
-                </p>
+                <h1 className="text-xl md:text-2xl font-heading font-bold text-foreground">Contractor Access</h1>
+                <p className="text-sm md:text-base text-muted-foreground">Manage temporary upload links</p>
               </div>
             </div>
 
-            <Button
-              onClick={() => setCreateDialogOpen(true)}
-              className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 w-full sm:w-auto"
-            >
-              <UserPlus className="w-4 h-4" />
-              Add Contractor
-            </Button>
+            {isAdmin && (
+              <Button
+                onClick={() => setCreateDialogOpen(true)}
+                className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 w-full sm:w-auto"
+              >
+                <UserPlus className="w-4 h-4" />
+                Add Contractor
+              </Button>
+            )}
           </div>
         </div>
 
@@ -131,18 +161,17 @@ export default function ContractorsPage() {
 
         <ContractorList
           contractors={contractors}
-          folders={MOCK_FOLDERS}
+          isAdmin={isAdmin}
           onRevoke={handleRevokeAccess}
-          onExtend={handleExtendAccess}
           onDelete={handleDeleteContractor}
         />
       </main>
 
       <CreateContractorDialog
         isOpen={createDialogOpen}
-        folders={MOCK_FOLDERS}
         onClose={() => setCreateDialogOpen(false)}
         onCreate={handleCreateContractor}
+        loading={creating}
       />
 
       <CredentialsDialog

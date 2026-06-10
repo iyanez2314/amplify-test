@@ -1,243 +1,63 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { createPortal } from "react-dom"
-import { X, UserPlus, Folder, FolderOpen, Check, ChevronRight } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import type { Folder as FolderType } from "@/types/folder"
-import { cn } from "@/lib/utils"
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
+import { X, UserPlus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface CreateContractorDialogProps {
-  isOpen: boolean
-  folders: FolderType[]
-  onClose: () => void
+  isOpen: boolean;
+  onClose: () => void;
   onCreate: (data: {
-    name: string
-    email: string
-    folderIds: string[]
-    expiresAt: Date
-  }) => void
-}
-
-interface FolderNode {
-  folder: FolderType
-  children: FolderNode[]
-}
-
-function buildFolderTree(folders: FolderType[], parentId: string | null = null): FolderNode[] {
-  return folders
-    .filter(f => f.parentId === parentId)
-    .map(folder => ({
-      folder,
-      children: buildFolderTree(folders, folder.id)
-    }))
-}
-
-function getAllDescendantIds(folders: FolderType[], parentId: string): string[] {
-  const children = folders.filter(f => f.parentId === parentId)
-  const childIds = children.map(c => c.id)
-  const descendantIds = children.flatMap(c => getAllDescendantIds(folders, c.id))
-  return [...childIds, ...descendantIds]
-}
-
-function FolderTreeSelect({
-  node,
-  level = 0,
-  selectedFolders,
-  expandedFolders,
-  onToggleSelect,
-  onToggleExpand
-}: {
-  node: FolderNode
-  level?: number
-  selectedFolders: string[]
-  expandedFolders: string[]
-  onToggleSelect: (id: string) => void
-  onToggleExpand: (id: string) => void
-}) {
-  const hasChildren = node.children.length > 0
-  const isSelected = selectedFolders.includes(node.folder.id)
-  const isExpanded = expandedFolders.includes(node.folder.id)
-
-  return (
-    <div className={level === 0 && node.children.length > 0 ? "mb-1" : ""}>
-      <div
-        className={cn(
-          "flex items-center gap-2 py-2 px-2 rounded-lg transition-colors cursor-pointer my-0.5",
-          isSelected
-            ? "bg-primary/15 border border-primary/20"
-            : "hover:bg-secondary/50 border border-transparent"
-        )}
-        style={{ paddingLeft: `${8 + level * 20}px` }}
-      >
-        {hasChildren ? (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation()
-              onToggleExpand(node.folder.id)
-            }}
-            className="w-4 h-4 flex items-center justify-center"
-          >
-            <ChevronRight
-              className={cn(
-                "w-3.5 h-3.5 text-muted-foreground transition-transform",
-                isExpanded && "rotate-90"
-              )}
-            />
-          </button>
-        ) : (
-          <span className="w-4" />
-        )}
-
-        <button
-          type="button"
-          onClick={() => onToggleSelect(node.folder.id)}
-          className="flex items-center gap-2 flex-1"
-        >
-          <span className={cn(
-            "w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors",
-            isSelected
-              ? "bg-primary border-primary"
-              : "border-border"
-          )}>
-            {isSelected && (
-              <Check className="w-3 h-3 text-primary-foreground" />
-            )}
-          </span>
-
-          {hasChildren && isExpanded ? (
-            <FolderOpen className={cn(
-              "w-4 h-4",
-              isSelected ? "text-primary" : "text-muted-foreground"
-            )} />
-          ) : (
-            <Folder className={cn(
-              "w-4 h-4",
-              isSelected ? "text-primary" : "text-muted-foreground"
-            )} />
-          )}
-
-          <span className={cn(
-            "text-sm",
-            isSelected ? "text-foreground font-medium" : "text-foreground"
-          )}>
-            {node.folder.name}
-          </span>
-        </button>
-      </div>
-
-      {hasChildren && isExpanded && (
-        <div>
-          {node.children.map(child => (
-            <FolderTreeSelect
-              key={child.folder.id}
-              node={child}
-              level={level + 1}
-              selectedFolders={selectedFolders}
-              expandedFolders={expandedFolders}
-              onToggleSelect={onToggleSelect}
-              onToggleExpand={onToggleExpand}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  )
+    contractorName: string;
+    dropboxFolder: string;
+    expiresInHours: number;
+    maxUploads: number;
+  }) => void;
+  loading?: boolean;
 }
 
 export function CreateContractorDialog({
   isOpen,
-  folders,
   onClose,
-  onCreate
+  onCreate,
+  loading = false,
 }: CreateContractorDialogProps) {
-  const [name, setName] = useState("")
-  const [email, setEmail] = useState("")
-  const [selectedFolders, setSelectedFolders] = useState<string[]>([])
-  const [expandedFolders, setExpandedFolders] = useState<string[]>([])
-  const [expiryDays, setExpiryDays] = useState(30)
-
-  const folderTree = buildFolderTree(folders)
+  const [contractorName, setContractorName] = useState("");
+  const [dropboxFolder, setDropboxFolder] = useState("");
+  const [expiryDays, setExpiryDays] = useState(2);
+  const [maxUploads, setMaxUploads] = useState(10);
 
   useEffect(() => {
     if (isOpen) {
-      setName("")
-      setEmail("")
-      setSelectedFolders([])
-      // Auto-expand root folders
-      setExpandedFolders(folders.filter(f => f.parentId === null).map(f => f.id))
-      setExpiryDays(30)
+      setContractorName("");
+      setDropboxFolder("");
+      setExpiryDays(2);
+      setMaxUploads(10);
     }
-  }, [isOpen, folders])
+  }, [isOpen]);
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (name.trim() && email.trim() && selectedFolders.length > 0) {
-      const expiresAt = new Date()
-      expiresAt.setDate(expiresAt.getDate() + expiryDays)
+    e.preventDefault();
+    onCreate({
+      contractorName: contractorName.trim(),
+      dropboxFolder: dropboxFolder.trim(),
+      expiresInHours: expiryDays * 24,
+      maxUploads,
+    });
+  };
 
-      onCreate({
-        name: name.trim(),
-        email: email.trim(),
-        folderIds: selectedFolders,
-        expiresAt
-      })
-    }
-  }
-
-  const toggleFolder = (folderId: string) => {
-    const descendantIds = getAllDescendantIds(folders, folderId)
-    const allIds = [folderId, ...descendantIds]
-
-    setSelectedFolders(prev => {
-      const isCurrentlySelected = prev.includes(folderId)
-      if (isCurrentlySelected) {
-        // Uncheck this folder and all descendants
-        return prev.filter(id => !allIds.includes(id))
-      } else {
-        // Check this folder and all descendants
-        const newSelection = new Set([...prev, ...allIds])
-        return Array.from(newSelection)
-      }
-    })
-
-    // Auto-expand the folder when selecting so user sees all checked children
-    if (!selectedFolders.includes(folderId) && descendantIds.length > 0) {
-      setExpandedFolders(prev =>
-        prev.includes(folderId) ? prev : [...prev, folderId]
-      )
-    }
-  }
-
-  const toggleExpand = (folderId: string) => {
-    setExpandedFolders(prev =>
-      prev.includes(folderId)
-        ? prev.filter(id => id !== folderId)
-        : [...prev, folderId]
-    )
-  }
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Escape") {
-      onClose()
-    }
-  }
-
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   const dialog = (
-    <div
-      className="fixed inset-0 z-[200] flex items-center justify-center"
-      onKeyDown={handleKeyDown}
-    >
+    <div className="fixed inset-0 z-[200] flex items-center justify-center">
       <div
         className="absolute inset-0 bg-background/80 backdrop-blur-sm"
         onClick={onClose}
       />
 
       <div
-        className="relative z-10 w-full max-w-lg mx-4 bg-card border border-border rounded-xl shadow-2xl max-h-[90vh] overflow-hidden flex flex-col"
+        className="relative z-10 w-full max-w-lg mx-4 bg-card border border-border rounded-xl shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-border/50">
@@ -259,37 +79,40 @@ export function CreateContractorDialog({
           </Button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
-          <div className="p-5 space-y-4 overflow-y-auto">
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
-                Full Name
-              </label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="John Smith"
-                className="w-full px-3 py-2 text-sm bg-secondary/50 border border-border/50 rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-colors"
-                required
-              />
-            </div>
+        <form onSubmit={handleSubmit} className="p-5 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">
+              Contractor Name
+            </label>
+            <input
+              type="text"
+              value={contractorName}
+              onChange={(e) => setContractorName(e.target.value)}
+              placeholder="John Smith"
+              className="w-full px-3 py-2 text-sm bg-secondary/50 border border-border/50 rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-colors"
+              required
+            />
+          </div>
 
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
-                Email Address
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="john@contractor.com"
-                className="w-full px-3 py-2 text-sm bg-secondary/50 border border-border/50 rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-colors"
-                required
-              />
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">
+              Dropbox Folder
+            </label>
+            <input
+              type="text"
+              value={dropboxFolder}
+              onChange={(e) => setDropboxFolder(e.target.value)}
+              placeholder="/projects/shoot-june"
+              className="w-full px-3 py-2 text-sm bg-secondary/50 border border-border/50 rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-colors"
+              required
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              The Dropbox folder path files will be uploaded to
+            </p>
+          </div>
 
-            <div>
+          <div className="flex gap-4">
+            <div className="flex-1">
               <label className="block text-sm font-medium text-foreground mb-2">
                 Access Duration
               </label>
@@ -298,68 +121,50 @@ export function CreateContractorDialog({
                 onChange={(e) => setExpiryDays(Number(e.target.value))}
                 className="w-full px-3 py-2 text-sm bg-secondary/50 border border-border/50 rounded-lg text-foreground focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-colors"
               >
+                <option value={1}>1 day</option>
+                <option value={2}>2 days</option>
                 <option value={7}>7 days</option>
                 <option value={14}>14 days</option>
                 <option value={30}>30 days</option>
-                <option value={60}>60 days</option>
-                <option value={90}>90 days</option>
               </select>
             </div>
 
-            <div>
+            <div className="flex-1">
               <label className="block text-sm font-medium text-foreground mb-2">
-                Folder Access
+                Max Uploads
               </label>
-              <p className="text-xs text-muted-foreground mb-3">
-                Select which folders this contractor can view and upload to
-              </p>
-              <div className="bg-secondary/30 rounded-lg border border-border/50 p-2 max-h-48 overflow-y-auto">
-                {folderTree.map(node => (
-                  <FolderTreeSelect
-                    key={node.folder.id}
-                    node={node}
-                    selectedFolders={selectedFolders}
-                    expandedFolders={expandedFolders}
-                    onToggleSelect={toggleFolder}
-                    onToggleExpand={toggleExpand}
-                  />
-                ))}
-              </div>
-              {selectedFolders.length === 0 && (
-                <p className="text-xs text-destructive mt-2">
-                  Please select at least one folder
-                </p>
-              )}
-              {selectedFolders.length > 0 && (
-                <p className="text-xs text-muted-foreground mt-2">
-                  {selectedFolders.length} folder{selectedFolders.length !== 1 ? "s" : ""} selected
-                </p>
-              )}
+              <input
+                type="number"
+                value={maxUploads}
+                onChange={(e) => setMaxUploads(Number(e.target.value))}
+                min={1}
+                className="w-full px-3 py-2 text-sm bg-secondary/50 border border-border/50 rounded-lg text-foreground focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-colors"
+                required
+              />
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-border/50 bg-card">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={onClose}
-            >
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-border/50">
+            <Button type="button" variant="outline" size="sm" onClick={onClose}>
               Cancel
             </Button>
             <Button
               type="submit"
               size="sm"
-              disabled={!name.trim() || !email.trim() || selectedFolders.length === 0}
+              disabled={
+                loading || !contractorName.trim() || !dropboxFolder.trim()
+              }
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
-              Generate Credentials
+              {loading ? "Generating..." : "Generate Link"}
             </Button>
           </div>
         </form>
       </div>
     </div>
-  )
+  );
 
-  return typeof window !== "undefined" ? createPortal(dialog, document.body) : null
+  return typeof window !== "undefined"
+    ? createPortal(dialog, document.body)
+    : null;
 }
