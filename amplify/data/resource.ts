@@ -21,6 +21,21 @@ const schema = a.schema({
     })
     .secondaryIndexes((index) => [index("token")])
     .authorization((allow) => [allow.authenticated()]),
+
+  ArchivedFile: a
+    .model({
+      fileName: a.string().required(),
+      s3Key: a.string().required(),
+      sizeMB: a.float().required(),
+      tags: a.string().array(),
+      dropboxPath: a.string().required(),
+      archivedBy: a.string().required(),
+      status: a.enum(["archived", "retrieving", "ready"]),
+      retrievalRequestedAt: a.string(),
+      retrievalReadyAt: a.string(),
+    })
+    .secondaryIndexes((index) => [index("status")])
+    .authorization((allow) => [allow.authenticated()]),
 });
 
 export type Schema = ClientSchema<typeof schema>;

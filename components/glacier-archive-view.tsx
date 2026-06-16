@@ -1,72 +1,14 @@
 "use client"
 
 import { useState } from "react"
-import { Archive, Clock, Download, HardDrive, Search, Tag } from "lucide-react"
+import { Archive, Clock, Download, HardDrive, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
+import { useArchivedFiles, useArchiveMutations } from "@/hooks/archive/use-archive"
+import type { ArchivalStatus } from "@/types/archive"
 
-type RetrievalStatus = "archived" | "retrieving" | "ready"
-
-interface ArchivedFile {
-  id: string
-  name: string
-  folder: string
-  size: string
-  tags: string[]
-  archivedAt: string
-  status: RetrievalStatus
-}
-
-const MOCK_ARCHIVED_FILES: ArchivedFile[] = [
-  {
-    id: "1",
-    name: "episode-42-raw-footage.mxf",
-    folder: "/projects/episode-42",
-    size: "48.2 GB",
-    tags: ["episode-42", "pittsburgh", "raw"],
-    archivedAt: "2026-05-10",
-    status: "archived",
-  },
-  {
-    id: "2",
-    name: "interview-b-roll-4k.mxf",
-    folder: "/projects/episode-40",
-    size: "22.7 GB",
-    tags: ["episode-40", "interview", "b-roll"],
-    archivedAt: "2026-05-02",
-    status: "retrieving",
-  },
-  {
-    id: "3",
-    name: "outdoor-shoot-day2.mxf",
-    folder: "/projects/episode-38",
-    size: "61.4 GB",
-    tags: ["episode-38", "outdoor", "day2"],
-    archivedAt: "2026-04-18",
-    status: "ready",
-  },
-  {
-    id: "4",
-    name: "studio-session-master.mxf",
-    folder: "/projects/episode-36",
-    size: "33.1 GB",
-    tags: ["episode-36", "studio"],
-    archivedAt: "2026-04-01",
-    status: "archived",
-  },
-  {
-    id: "5",
-    name: "drone-footage-4k.mxf",
-    folder: "/projects/episode-35",
-    size: "18.9 GB",
-    tags: ["episode-35", "drone", "aerial"],
-    archivedAt: "2026-03-22",
-    status: "archived",
-  },
-]
-
-function getStatusConfig(status: RetrievalStatus) {
+function getStatusConfig(status: ArchivalStatus) {
   switch (status) {
     case "archived":
       return { label: "Archived", className: "bg-secondary/60 text-muted-foreground border-border/50" }
@@ -80,24 +22,29 @@ function getStatusConfig(status: RetrievalStatus) {
 export function GlacierArchiveView() {
   const [search, setSearch] = useState("")
   const [selectedTag, setSelectedTag] = useState<string | null>(null)
+  const { data: files = [] } = useArchivedFiles()
+  const { retrievalMutation } = useArchiveMutations()
 
-  const allTags = Array.from(new Set(MOCK_ARCHIVED_FILES.flatMap(f => f.tags)))
+  const allTags = Array.from(new Set(files.flatMap(f => f.tags)))
 
-  const filtered = MOCK_ARCHIVED_FILES.filter(file => {
-    const matchesSearch = file.name.toLowerCase().includes(search.toLowerCase()) ||
-      file.folder.toLowerCase().includes(search.toLowerCase())
+  const filtered = files.filter(file => {
+    const matchesSearch = file.fileName.toLowerCase().includes(search.toLowerCase()) ||
+      file.dropboxPath.toLowerCase().includes(search.toLowerCase())
     const matchesTag = !selectedTag || file.tags.includes(selectedTag)
     return matchesSearch && matchesTag
   })
 
-  const totalSize = "184.3 GB"
+  const totalSizeMB = files.reduce((acc, f) => acc + f.sizeMB, 0)
+  const totalSize = totalSizeMB > 1024
+    ? `${(totalSizeMB / 1024).toFixed(1)} GB`
+    : `${totalSizeMB.toFixed(1)} MB`
 
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-3 gap-2 md:gap-4">
         <div className="bg-card/40 border border-border/50 rounded-xl p-3 md:p-4">
           <p className="text-xs md:text-sm text-muted-foreground mb-1">Total Files</p>
-          <p className="text-xl md:text-2xl font-bold text-foreground">{MOCK_ARCHIVED_FILES.length}</p>
+          <p className="text-xl md:text-2xl font-bold text-foreground">{files.length}</p>
         </div>
         <div className="bg-card/40 border border-border/50 rounded-xl p-3 md:p-4">
           <p className="text-xs md:text-sm text-muted-foreground mb-1">Total Size</p>
@@ -106,7 +53,7 @@ export function GlacierArchiveView() {
         <div className="bg-card/40 border border-border/50 rounded-xl p-3 md:p-4">
           <p className="text-xs md:text-sm text-muted-foreground mb-1">Retrieving</p>
           <p className="text-xl md:text-2xl font-bold text-orange-500">
-            {MOCK_ARCHIVED_FILES.filter(f => f.status === "retrieving").length}
+            {files.filter(f => f.status === "retrieving").length}
           </p>
         </div>
       </div>
@@ -162,6 +109,10 @@ export function GlacierArchiveView() {
 
         {filtered.map(file => {
           const statusConfig = getStatusConfig(file.status)
+          const sizeLabel = file.sizeMB > 1024
+            ? `${(file.sizeMB / 1024).toFixed(1)} GB`
+            : `${file.sizeMB.toFixed(1)} MB`
+
           return (
             <div key={file.id} className="bg-card/40 border border-border/50 rounded-xl p-4 hover:bg-card/60 transition-colors">
               <div className="flex items-start justify-between gap-4">
@@ -172,27 +123,27 @@ export function GlacierArchiveView() {
 
                   <div className="space-y-1.5 min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="font-medium text-sm text-foreground truncate">{file.name}</p>
+                      <p className="font-medium text-sm text-foreground truncate">{file.fileName}</p>
                       <Badge variant="outline" className={cn("text-xs flex-shrink-0", statusConfig.className)}>
                         {statusConfig.label}
                       </Badge>
                     </div>
 
-                    <p className="text-xs text-muted-foreground truncate">{file.folder}</p>
+                    <p className="text-xs text-muted-foreground truncate">{file.dropboxPath}</p>
 
                     <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                       <span className="flex items-center gap-1">
                         <HardDrive className="w-3 h-3" />
-                        {file.size}
+                        {sizeLabel}
                       </span>
                       <span className="flex items-center gap-1">
                         <Clock className="w-3 h-3" />
-                        Archived {file.archivedAt}
+                        Archived {new Date(file.createdAt).toLocaleDateString()}
                       </span>
                     </div>
 
                     <div className="flex flex-wrap gap-1">
-                      {file.tags.map(tag => (
+                      {(file.tags ?? []).map(tag => (
                         <span key={tag} className="px-2 py-0.5 bg-secondary/60 text-muted-foreground text-xs rounded-full">
                           {tag}
                         </span>
@@ -203,7 +154,13 @@ export function GlacierArchiveView() {
 
                 <div className="flex-shrink-0">
                   {file.status === "archived" && (
-                    <Button variant="outline" size="sm" className="gap-1.5 text-xs">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1.5 text-xs"
+                      onClick={() => retrievalMutation.mutate(file.id)}
+                      disabled={retrievalMutation.isPending}
+                    >
                       <Download className="w-3 h-3" />
                       Request Retrieval
                     </Button>

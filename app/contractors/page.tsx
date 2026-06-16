@@ -1,36 +1,85 @@
 "use client"
 
-import { useState } from "react"
+import { Suspense, useState } from "react"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { ContractorList } from "@/components/contractor-list"
 import { CreateContractorDialog } from "@/components/create-contractor-dialog"
 import { CredentialsDialog } from "@/components/credentials-dialog"
+import { AuthGuard } from "@/components/auth-guard"
 import { Button } from "@/components/ui/button"
 import { UserPlus, Users, ArrowLeft } from "lucide-react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/auth/use-auth"
 import { useContractors, useContractorMutations } from "@/hooks/contractors/use-contractors"
-import { useEffect } from "react"
 
-export default function ContractorsPage() {
-  const { isAdmin, isLoading, isAuthenticated, handleSignOut } = useAuth()
-  const router = useRouter()
-  const [createDialogOpen, setCreateDialogOpen] = useState(false)
-  const [newCredentials, setNewCredentials] = useState<{ name: string; link: string } | null>(null)
+function ContractorListSkeleton() {
+  return (
+    <div className="space-y-3 animate-pulse">
+      <div className="grid grid-cols-3 gap-2 md:gap-4 mb-6">
+        {[1, 2, 3].map(i => <div key={i} className="h-24 bg-secondary/40 rounded-xl" />)}
+      </div>
+      {[1, 2, 3].map(i => <div key={i} className="h-28 bg-secondary/30 rounded-xl" />)}
+    </div>
+  )
+}
 
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) router.push("/login")
-  }, [isLoading, isAuthenticated, router])
-
-  const { data: contractors = [] } = useContractors(isAuthenticated)
+function ContractorData({
+  isAdmin,
+  onNewCredentials,
+  createDialogOpen,
+  setCreateDialogOpen,
+}: {
+  isAdmin: boolean
+  onNewCredentials: (creds: { name: string; link: string }) => void
+  createDialogOpen: boolean
+  setCreateDialogOpen: (open: boolean) => void
+}) {
+  const { data: contractors = [] } = useContractors()
   const { createMutation, revokeMutation, deleteMutation } = useContractorMutations()
-
-  if (isLoading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>
-  if (!isAuthenticated) return null
 
   const activeCount = contractors.filter(c => c.status === "active").length
   const expiredCount = contractors.filter(c => c.status === "expired").length
+
+  return (
+    <>
+      <div className="grid grid-cols-3 gap-2 md:gap-4 mb-6 md:mb-8">
+        <div className="bg-card/40 border border-border/50 rounded-xl p-3 md:p-4">
+          <p className="text-xs md:text-sm text-muted-foreground mb-1">Total</p>
+          <p className="text-xl md:text-2xl font-bold text-foreground">{contractors.length}</p>
+        </div>
+        <div className="bg-card/40 border border-border/50 rounded-xl p-3 md:p-4">
+          <p className="text-xs md:text-sm text-muted-foreground mb-1">Active</p>
+          <p className="text-xl md:text-2xl font-bold text-primary">{activeCount}</p>
+        </div>
+        <div className="bg-card/40 border border-border/50 rounded-xl p-3 md:p-4">
+          <p className="text-xs md:text-sm text-muted-foreground mb-1">Expired</p>
+          <p className="text-xl md:text-2xl font-bold text-orange-500">{expiredCount}</p>
+        </div>
+      </div>
+
+      <ContractorList
+        contractors={contractors}
+        isAdmin={isAdmin}
+        onRevoke={(id) => revokeMutation.mutate(id)}
+        onDelete={(id) => deleteMutation.mutate(id)}
+      />
+
+      <CreateContractorDialog
+        isOpen={createDialogOpen}
+        onClose={() => setCreateDialogOpen(false)}
+        onCreate={(data) => createMutation.mutate(data, {
+          onSuccess: (result) => onNewCredentials({ name: data.contractorName, link: result.link })
+        })}
+        loading={createMutation.isPending}
+      />
+    </>
+  )
+}
+
+function ContractorsContent() {
+  const { isAdmin, handleSignOut } = useAuth()
+  const [createDialogOpen, setCreateDialogOpen] = useState(false)
+  const [newCredentials, setNewCredentials] = useState<{ name: string; link: string } | null>(null)
 
   return (
     <div className="min-h-screen bg-background">
@@ -66,37 +115,15 @@ export default function ContractorsPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-2 md:gap-4 mb-6 md:mb-8">
-          <div className="bg-card/40 border border-border/50 rounded-xl p-3 md:p-4">
-            <p className="text-xs md:text-sm text-muted-foreground mb-1">Total</p>
-            <p className="text-xl md:text-2xl font-bold text-foreground">{contractors.length}</p>
-          </div>
-          <div className="bg-card/40 border border-border/50 rounded-xl p-3 md:p-4">
-            <p className="text-xs md:text-sm text-muted-foreground mb-1">Active</p>
-            <p className="text-xl md:text-2xl font-bold text-primary">{activeCount}</p>
-          </div>
-          <div className="bg-card/40 border border-border/50 rounded-xl p-3 md:p-4">
-            <p className="text-xs md:text-sm text-muted-foreground mb-1">Expired</p>
-            <p className="text-xl md:text-2xl font-bold text-orange-500">{expiredCount}</p>
-          </div>
-        </div>
-
-        <ContractorList
-          contractors={contractors}
-          isAdmin={isAdmin}
-          onRevoke={(id) => revokeMutation.mutate(id)}
-          onDelete={(id) => deleteMutation.mutate(id)}
-        />
+        <Suspense fallback={<ContractorListSkeleton />}>
+          <ContractorData
+            isAdmin={isAdmin}
+            onNewCredentials={setNewCredentials}
+            createDialogOpen={createDialogOpen}
+            setCreateDialogOpen={setCreateDialogOpen}
+          />
+        </Suspense>
       </main>
-
-      <CreateContractorDialog
-        isOpen={createDialogOpen}
-        onClose={() => setCreateDialogOpen(false)}
-        onCreate={(data) => createMutation.mutate(data, {
-          onSuccess: (result) => setNewCredentials({ name: data.contractorName, link: result.link })
-        })}
-        loading={createMutation.isPending}
-      />
 
       <CredentialsDialog
         isOpen={newCredentials !== null}
@@ -104,5 +131,13 @@ export default function ContractorsPage() {
         onClose={() => setNewCredentials(null)}
       />
     </div>
+  )
+}
+
+export default function ContractorsPage() {
+  return (
+    <AuthGuard>
+      <ContractorsContent />
+    </AuthGuard>
   )
 }

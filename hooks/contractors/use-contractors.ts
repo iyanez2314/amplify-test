@@ -1,6 +1,6 @@
 "use client"
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { useSuspenseQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   getContractors,
   createContractorLink,
@@ -8,11 +8,10 @@ import {
   deleteContractorLink,
 } from "@/lib/api/contractors"
 
-export function useContractors(enabled: boolean) {
-  return useQuery({
+export function useContractors() {
+  return useSuspenseQuery({
     queryKey: ["contractors"],
     queryFn: getContractors,
-    enabled,
   })
 }
 

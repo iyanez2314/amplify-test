@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useMemo, useEffect } from "react"
+import { useState, useCallback, useMemo } from "react"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { VideoUploadZone } from "@/components/video-upload-zone"
 import { UploadStats } from "@/components/upload-stats"
@@ -16,16 +16,15 @@ import { useVideoUpload } from "@/hooks/use-video-upload"
 import { useFolders } from "@/hooks/use-folders"
 import { useVideos } from "@/hooks/use-videos"
 import { useAuth } from "@/hooks/auth/use-auth"
-import { useRouter } from "next/navigation"
 import { GlacierArchiveView } from "@/components/glacier-archive-view"
+import { AuthGuard } from "@/components/auth-guard"
 import { Database, HardDrive, ChevronDown } from "lucide-react"
 
 type ViewMode = "videos" | "upload"
 type StorageMode = "dropbox" | "glacier"
 
-export default function VideoUploadDashboard() {
-  const { isAdmin, isLoading, isAuthenticated, handleSignOut } = useAuth()
-  const router = useRouter()
+function DashboardContent() {
+  const { isAdmin, handleSignOut } = useAuth()
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [createFolderOpen, setCreateFolderOpen] = useState(false)
@@ -88,15 +87,6 @@ export default function VideoUploadDashboard() {
     setViewMode("videos")
   }, [selectFolder])
 
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      router.push("/login")
-    }
-  }, [isLoading, isAuthenticated, router])
-
-  if (isLoading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>
-  if (!isAuthenticated) return null
-
   const showFolderContents = selectedFolderId && viewMode === "videos"
   const showUploadView = !selectedFolderId || viewMode === "upload"
 
@@ -107,11 +97,6 @@ export default function VideoUploadDashboard() {
         showMobileMenu={mobileMenuOpen}
         onSignOut={handleSignOut}
       />
-      {isAdmin && (
-        <div className="bg-green-500 text-white text-xs text-center py-1">
-          Admin Mode
-        </div>
-      )}
 
       <MobileFolderDrawer
         isOpen={mobileMenuOpen}
@@ -247,5 +232,13 @@ export default function VideoUploadDashboard() {
         onCreate={handleCreateFolder}
       />
     </div>
+  )
+}
+
+export default function VideoUploadDashboard() {
+  return (
+    <AuthGuard>
+      <DashboardContent />
+    </AuthGuard>
   )
 }
