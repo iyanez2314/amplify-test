@@ -1,4 +1,6 @@
 version: 1
+build:
+  computeType: BUILD_GENERAL1_LARGE
 backend:
   phases:
     build:
@@ -16,7 +18,7 @@ frontend:
   artifacts:
     baseDirectory: .next
     files:
-      - '**/*'
+      - "**/*"
   cache:
     paths:
       - .next/cache/**/*
