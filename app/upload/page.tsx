@@ -1,8 +1,6 @@
 "use client"
 
-export const dynamic = "force-dynamic"
-
-import { useEffect, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
 
 type TokenState = "loading" | "valid" | "invalid"
@@ -12,7 +10,7 @@ interface LinkInfo {
   dropboxFolder: string
 }
 
-export default function UploadPage() {
+function UploadContent() {
   const searchParams = useSearchParams()
   const token = searchParams.get("token")
   const [tokenState, setTokenState] = useState<TokenState>("loading")
@@ -89,5 +87,19 @@ export default function UploadPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function UploadPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      }
+    >
+      <UploadContent />
+    </Suspense>
   )
 }
