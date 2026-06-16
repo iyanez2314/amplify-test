@@ -11,6 +11,7 @@ export async function getContractors(): Promise<Contractor[]> {
   const { data } = await client.models.UploadLink.list()
   return (data ?? []).filter(Boolean).map((item) => ({
     id: item.id,
+    linkName: item.linkName,
     contractorName: item.contractorName,
     dropboxFolder: item.dropboxFolder,
     token: item.token,
@@ -18,15 +19,19 @@ export async function getContractors(): Promise<Contractor[]> {
     maxUploads: item.maxUploads,
     uploadCount: item.uploadCount,
     status: (item.status ?? "active") as Contractor["status"],
+    tags: (item.tags ?? []).filter((t): t is string => t !== null),
+    createdBy: item.createdBy,
     uploadLink: `${window.location.origin}/upload?token=${item.token}`,
   }))
 }
 
 export async function createContractorLink(data: {
+  linkName: string
   contractorName: string
   dropboxFolder: string
   expiresInHours: number
   maxUploads: number
+  tags: string[]
 }) {
   const session = await fetchAuthSession()
   const token = session.tokens?.idToken?.toString()

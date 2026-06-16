@@ -64,11 +64,12 @@ function ContractorRow({
 
           <div className="space-y-2 min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2 md:gap-3">
-              <h3 className="font-semibold text-sm md:text-base text-foreground truncate">{contractor.contractorName}</h3>
+              <h3 className="font-semibold text-sm md:text-base text-foreground truncate">{contractor.linkName}</h3>
               <Badge variant="outline" className={cn("text-xs flex-shrink-0", statusConfig.className)}>
                 {statusConfig.label}
               </Badge>
             </div>
+            <p className="text-xs text-muted-foreground">{contractor.contractorName}</p>
 
             <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-xs md:text-sm text-muted-foreground">
               <span className="flex items-center gap-1.5 truncate">
@@ -85,6 +86,16 @@ function ContractorRow({
               <Link className="w-3 h-3" />
               <span>{contractor.uploadCount} / {contractor.maxUploads} uploads used</span>
             </div>
+
+            {(contractor.tags ?? []).length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {(contractor.tags ?? []).map((tag) => (
+                  <span key={tag} className="px-2 py-0.5 bg-primary/15 text-primary text-xs rounded-full">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
 
             <div className="flex items-center gap-2 pt-1">
               <code className="text-xs bg-secondary/60 px-2 py-1 rounded font-mono text-muted-foreground truncate max-w-[200px] md:max-w-sm">

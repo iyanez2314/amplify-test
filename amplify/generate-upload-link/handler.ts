@@ -23,8 +23,10 @@ export const handler = async (event: any) => {
     };
   }
 
-  const { contractorName, dropboxFolder, expiresInHours, maxUploads } =
+  const { linkName, contractorName, dropboxFolder, expiresInHours, maxUploads, tags } =
     JSON.parse(event.body);
+
+  const createdBy = event.requestContext?.authorizer?.claims?.email ?? "unknown";
 
   const token = randomUUID();
   const now = new Date().toISOString();
@@ -38,6 +40,7 @@ export const handler = async (event: any) => {
       Item: {
         id: randomUUID(),
         __typename: "UploadLink",
+        linkName,
         token,
         contractorName,
         dropboxFolder,
@@ -45,6 +48,8 @@ export const handler = async (event: any) => {
         maxUploads,
         uploadCount: 0,
         status: "active",
+        tags: tags ?? [],
+        createdBy,
         createdAt: now,
         updatedAt: now,
       },

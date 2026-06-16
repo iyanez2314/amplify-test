@@ -8,6 +8,7 @@ const schema = a.schema({
     .authorization((allow) => [allow.guest()]),
   UploadLink: a
     .model({
+      linkName: a.string().required(),
       contractorName: a.string().required(),
       dropboxFolder: a.string().required(),
       token: a.string().required(),
@@ -15,6 +16,8 @@ const schema = a.schema({
       maxUploads: a.integer().required(),
       uploadCount: a.integer().required(),
       status: a.enum(["active", "expired", "revoked"]),
+      tags: a.string().array(),
+      createdBy: a.string().required(),
     })
     .secondaryIndexes((index) => [index("token")])
     .authorization((allow) => [allow.authenticated()]),
