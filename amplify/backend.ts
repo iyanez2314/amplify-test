@@ -91,3 +91,9 @@ backend.data.resources.tables["UploadLink"].grantReadData(
     ],
   }),
 );
+
+backend.addOutput({
+  custom: {
+    apiUrl: api.url,
+  },
+});

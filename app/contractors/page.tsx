@@ -14,6 +14,7 @@ import { generateClient } from "aws-amplify/data"
 import type { Schema } from "@/amplify/data/resource"
 import type { Contractor } from "@/types/contractor"
 import { useAuth } from "@/hooks/use-auth"
+import outputs from "@/amplify_outputs.json"
 
 const client = generateClient<Schema>()
 
@@ -63,8 +64,11 @@ export default function ContractorsPage() {
     try {
       const session = await fetchAuthSession()
       const token = session.tokens?.idToken?.toString()
+      console.log("Session tokens:", session.tokens)
+      console.log("ID token:", token?.substring(0, 50))
 
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/links`, {
+      const apiUrl = (outputs as any).custom?.apiUrl
+      const res = await fetch(`${apiUrl}links`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -74,6 +78,7 @@ export default function ContractorsPage() {
       })
 
       const result = await res.json()
+      console.log("API response status:", res.status, "body:", result)
       if (!res.ok) throw new Error(result.error)
 
       setCreateDialogOpen(false)

@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
+import outputs from "@/amplify_outputs.json"
 
 type TokenState = "loading" | "valid" | "invalid"
 
@@ -28,9 +29,8 @@ function UploadContent() {
 
   const validateToken = async (token: string) => {
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/validate?token=${token}`
-      )
+      const apiUrl = (outputs as any).custom?.apiUrl
+      const res = await fetch(`${apiUrl}validate?token=${token}`)
       const data = await res.json()
 
       if (!res.ok) {
