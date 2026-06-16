@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { Inter, Space_Grotesk } from 'next/font/google'
 import './globals.css'
 import AmplifyProvider from "@/components/amplify-provider"
+import QueryProvider from "@/components/query-provider"
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -45,7 +46,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${spaceGrotesk.variable} bg-background`}>
       <body className="font-sans antialiased bg-background">
-        <AmplifyProvider>{children}</AmplifyProvider>
+        <AmplifyProvider>
+          <QueryProvider>{children}</QueryProvider>
+        </AmplifyProvider>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>

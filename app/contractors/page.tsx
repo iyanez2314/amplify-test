@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useEffect } from "react"
+import { useState } from "react"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { ContractorList } from "@/components/contractor-list"
 import { CreateContractorDialog } from "@/components/create-contractor-dialog"
@@ -9,105 +9,22 @@ import { Button } from "@/components/ui/button"
 import { UserPlus, Users, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { fetchAuthSession } from "aws-amplify/auth"
-import { generateClient } from "aws-amplify/data"
-import type { Schema } from "@/amplify/data/resource"
-import type { Contractor } from "@/types/contractor"
-import { useAuth } from "@/hooks/use-auth"
-import outputs from "@/amplify_outputs.json"
-
-const client = generateClient<Schema>()
+import { useAuth } from "@/hooks/auth/use-auth"
+import { useContractors, useContractorMutations } from "@/hooks/contractors/use-contractors"
+import { useEffect } from "react"
 
 export default function ContractorsPage() {
   const { isAdmin, isLoading, isAuthenticated, handleSignOut } = useAuth()
   const router = useRouter()
-  const [contractors, setContractors] = useState<Contractor[]>([])
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
-  const [creating, setCreating] = useState(false)
   const [newCredentials, setNewCredentials] = useState<{ name: string; link: string } | null>(null)
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) router.push("/login")
   }, [isLoading, isAuthenticated, router])
 
-  useEffect(() => {
-    if (isAuthenticated) loadContractors()
-  }, [isAuthenticated])
-
-  const loadContractors = async () => {
-    try {
-      const { data } = await client.models.UploadLink.list()
-      const mapped: Contractor[] = (data ?? []).filter(Boolean).map((item) => ({
-        id: item.id,
-        contractorName: item.contractorName,
-        dropboxFolder: item.dropboxFolder,
-        token: item.token,
-        expiresAt: item.expiresAt,
-        maxUploads: item.maxUploads,
-        uploadCount: item.uploadCount,
-        status: (item.status ?? "active") as Contractor["status"],
-        uploadLink: `${process.env.NEXT_PUBLIC_APP_URL}/upload?token=${item.token}`,
-      }))
-      setContractors(mapped)
-    } catch (err) {
-      console.error("Failed to load contractors", err)
-    }
-  }
-
-  const handleCreateContractor = useCallback(async (data: {
-    contractorName: string
-    dropboxFolder: string
-    expiresInHours: number
-    maxUploads: number
-  }) => {
-    setCreating(true)
-    try {
-      const session = await fetchAuthSession()
-      const token = session.tokens?.idToken?.toString()
-      console.log("Session tokens:", session.tokens)
-      console.log("ID token:", token?.substring(0, 50))
-
-      const apiUrl = (outputs as any).custom?.apiUrl
-      const res = await fetch(`${apiUrl}links`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: token ?? "",
-        },
-        body: JSON.stringify(data),
-      })
-
-      const result = await res.json()
-      console.log("API response status:", res.status, "body:", result)
-      if (!res.ok) throw new Error(result.error)
-
-      setCreateDialogOpen(false)
-      setNewCredentials({ name: data.contractorName, link: result.link })
-      await loadContractors()
-    } catch (err: any) {
-      console.error("Failed to create contractor link", err)
-    } finally {
-      setCreating(false)
-    }
-  }, [])
-
-  const handleRevokeAccess = useCallback(async (id: string) => {
-    try {
-      await client.models.UploadLink.update({ id, status: "revoked" })
-      setContractors(prev => prev.map(c => c.id === id ? { ...c, status: "revoked" } : c))
-    } catch (err) {
-      console.error("Failed to revoke access", err)
-    }
-  }, [])
-
-  const handleDeleteContractor = useCallback(async (id: string) => {
-    try {
-      await client.models.UploadLink.delete({ id })
-      setContractors(prev => prev.filter(c => c.id !== id))
-    } catch (err) {
-      console.error("Failed to delete contractor", err)
-    }
-  }, [])
+  const { data: contractors = [] } = useContractors(isAuthenticated)
+  const { createMutation, revokeMutation, deleteMutation } = useContractorMutations()
 
   if (isLoading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>
   if (!isAuthenticated) return null
@@ -167,16 +84,18 @@ export default function ContractorsPage() {
         <ContractorList
           contractors={contractors}
           isAdmin={isAdmin}
-          onRevoke={handleRevokeAccess}
-          onDelete={handleDeleteContractor}
+          onRevoke={(id) => revokeMutation.mutate(id)}
+          onDelete={(id) => deleteMutation.mutate(id)}
         />
       </main>
 
       <CreateContractorDialog
         isOpen={createDialogOpen}
         onClose={() => setCreateDialogOpen(false)}
-        onCreate={handleCreateContractor}
-        loading={creating}
+        onCreate={(data) => createMutation.mutate(data, {
+          onSuccess: (result) => setNewCredentials({ name: data.contractorName, link: result.link })
+        })}
+        loading={createMutation.isPending}
       />
 
       <CredentialsDialog

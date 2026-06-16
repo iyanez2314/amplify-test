@@ -15,7 +15,7 @@ import { EmptyUploadState } from "@/components/empty-upload-state"
 import { useVideoUpload } from "@/hooks/use-video-upload"
 import { useFolders } from "@/hooks/use-folders"
 import { useVideos } from "@/hooks/use-videos"
-import { useAuth } from "@/hooks/use-auth"
+import { useAuth } from "@/hooks/auth/use-auth"
 import { useRouter } from "next/navigation"
 
 type ViewMode = "videos" | "upload"
