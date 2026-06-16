@@ -3,7 +3,7 @@ import { auth } from "./auth/resource";
 import { data } from "./data/resource";
 import { myFunction } from "./test-function/resource";
 import { generateUploadLink } from "./generate-upload-link/resource";
-import { Cors, CognitoUserPoolsAuthorizer, AuthorizationType, LambdaIntegration, RestApi } from "aws-cdk-lib/aws-apigateway";
+import { Cors, CognitoUserPoolsAuthorizer, AuthorizationType, LambdaIntegration, RestApi, GatewayResponse, ResponseType } from "aws-cdk-lib/aws-apigateway";
 import { Function as LambdaFunction } from "aws-cdk-lib/aws-lambda";
 import { PolicyStatement } from "aws-cdk-lib/aws-iam";
 import { validateToken } from "./validate-token/resource";
@@ -46,6 +46,24 @@ linkResource.addMethod("POST", generateLinkIntegration, {
 
 const validateResource = api.root.addResource("validate");
 validateResource.addMethod("GET", validateTokenIntegration);
+
+new GatewayResponse(apiStack, "CORSGatewayResponse4XX", {
+  restApi: api,
+  type: ResponseType.DEFAULT_4XX,
+  responseHeaders: {
+    "Access-Control-Allow-Origin": "'*'",
+    "Access-Control-Allow-Headers": "'*'",
+  },
+});
+
+new GatewayResponse(apiStack, "CORSGatewayResponse5XX", {
+  restApi: api,
+  type: ResponseType.DEFAULT_5XX,
+  responseHeaders: {
+    "Access-Control-Allow-Origin": "'*'",
+    "Access-Control-Allow-Headers": "'*'",
+  },
+});
 
 (backend.generateUploadLink.resources.lambda as LambdaFunction).addEnvironment(
   "UPLOAD_LINK_TABLE",
