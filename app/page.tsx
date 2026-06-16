@@ -17,8 +17,11 @@ import { useFolders } from "@/hooks/use-folders"
 import { useVideos } from "@/hooks/use-videos"
 import { useAuth } from "@/hooks/auth/use-auth"
 import { useRouter } from "next/navigation"
+import { GlacierArchiveView } from "@/components/glacier-archive-view"
+import { Database, HardDrive, ChevronDown } from "lucide-react"
 
 type ViewMode = "videos" | "upload"
+type StorageMode = "dropbox" | "glacier"
 
 export default function VideoUploadDashboard() {
   const { isAdmin, isLoading, isAuthenticated, handleSignOut } = useAuth()
@@ -27,6 +30,8 @@ export default function VideoUploadDashboard() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [createFolderOpen, setCreateFolderOpen] = useState(false)
   const [viewMode, setViewMode] = useState<ViewMode>("videos")
+  const [storageMode, setStorageMode] = useState<StorageMode>("dropbox")
+  const [storageDropdownOpen, setStorageDropdownOpen] = useState(false)
 
   const {
     files,
@@ -123,7 +128,7 @@ export default function VideoUploadDashboard() {
       />
 
       <div className="flex flex-1">
-        <FolderTreeSidebar
+        {storageMode === "dropbox" && <FolderTreeSidebar
           folders={folders}
           selectedFolderId={selectedFolderId}
           expandedFolderIds={expandedFolderIds}
@@ -135,17 +140,52 @@ export default function VideoUploadDashboard() {
           onCreateFolder={() => setCreateFolderOpen(true)}
           hasChildren={hasChildren}
           getChildFolders={getChildFolders}
-        />
+        />}
 
         <main className="flex-1 px-4 md:px-8 py-4 md:py-6 overflow-y-auto">
           <div className="max-w-5xl mx-auto space-y-4 md:space-y-6">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="relative">
+                <button
+                  onClick={() => setStorageDropdownOpen(!storageDropdownOpen)}
+                  className="flex items-center gap-2 px-3 py-2 text-sm bg-card/40 border border-border/50 rounded-lg hover:bg-card/60 transition-colors"
+                >
+                  {storageMode === "dropbox"
+                    ? <><Database className="w-4 h-4 text-primary" /> Dropbox Files</>
+                    : <><HardDrive className="w-4 h-4 text-primary" /> Glacier Archive</>
+                  }
+                  <ChevronDown className="w-3 h-3 text-muted-foreground" />
+                </button>
+
+                {storageDropdownOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setStorageDropdownOpen(false)} />
+                    <div className="absolute top-full left-0 mt-1 w-48 bg-card border border-border rounded-lg shadow-xl z-50 overflow-hidden">
+                      <button
+                        onClick={() => { setStorageMode("dropbox"); setStorageDropdownOpen(false) }}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-secondary/60 transition-colors"
+                      >
+                        <Database className="w-4 h-4 text-primary" />
+                        Dropbox Files
+                      </button>
+                      <button
+                        onClick={() => { setStorageMode("glacier"); setStorageDropdownOpen(false) }}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-secondary/60 transition-colors"
+                      >
+                        <HardDrive className="w-4 h-4 text-primary" />
+                        Glacier Archive
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+
               <FolderBreadcrumb
                 path={selectedFolderPath}
                 onNavigate={handleSelectFolder}
               />
 
-              {selectedFolderId && (
+              {storageMode === "dropbox" && selectedFolderId && (
                 <ViewModeToggle
                   viewMode={viewMode}
                   onViewModeChange={setViewMode}
@@ -155,7 +195,9 @@ export default function VideoUploadDashboard() {
               )}
             </div>
 
-            {showFolderContents && selectedFolder && (
+            {storageMode === "glacier" && <GlacierArchiveView />}
+
+            {storageMode === "dropbox" && showFolderContents && selectedFolder && (
               <FolderContentsView
                 folder={selectedFolder}
                 videos={folderVideos}
@@ -168,7 +210,7 @@ export default function VideoUploadDashboard() {
               />
             )}
 
-            {showUploadView && (
+            {storageMode === "dropbox" && showUploadView && (
               <>
                 <VideoUploadZone
                   onFilesSelected={handleFilesSelected}
