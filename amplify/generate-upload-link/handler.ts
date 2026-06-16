@@ -27,6 +27,7 @@ export const handler = async (event: any) => {
     JSON.parse(event.body);
 
   const token = randomUUID();
+  const now = new Date().toISOString();
   const expiresAt = new Date(
     Date.now() + expiresInHours * 60 * 60 * 1000,
   ).toISOString();
@@ -36,6 +37,7 @@ export const handler = async (event: any) => {
       TableName: process.env.UPLOAD_LINK_TABLE,
       Item: {
         id: randomUUID(),
+        __typename: "UploadLink",
         token,
         contractorName,
         dropboxFolder,
@@ -43,6 +45,8 @@ export const handler = async (event: any) => {
         maxUploads,
         uploadCount: 0,
         status: "active",
+        createdAt: now,
+        updatedAt: now,
       },
     }),
   );
